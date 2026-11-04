@@ -43,6 +43,7 @@ const Background := preload("res://scripts/background.gd")
 const Plants := preload("res://scripts/plants.gd")
 const Foreground := preload("res://scripts/foreground.gd")
 const PauseMenu := preload("res://scripts/pause_menu.gd")
+const Title := preload("res://scripts/title.gd")
 
 const SHRINES := {"1": "double_jump", "2": "dash", "3": "bash", "4": "glide"}
 
@@ -70,6 +71,7 @@ func _ready() -> void:
 	_spawn_player_and_camera()
 	add_child(Hud.new())
 	add_child(PauseMenu.new())
+	add_child(Title.new())
 
 
 # ---------------------------------------------------------------------------
@@ -211,6 +213,7 @@ func _build_terrain() -> void:
 			cover.set_cell(p, tile_sources[_ground_tile(p.x, p.y, true)], Vector2i.ZERO)
 			rects.append(Rect2(Vector2(p) * TILE, Vector2(TILE, TILE)))
 		var area := SecretArea.new()
+		area.set_meta("id", "secret_%d_%d" % [group[0].x, group[0].y])
 		area.cover = cover
 		area.rects = rects
 		world.add_child(area)
@@ -264,6 +267,7 @@ func _bounds(group: Array) -> Rect2i:
 
 func _build_objects() -> void:
 	var sign_cells: Array[Vector2i] = []
+	var orb_count := 0
 	for y in height:
 		var x := 0
 		while x < width:
@@ -272,10 +276,15 @@ func _build_objects() -> void:
 			var center := top_left + Vector2(TILE, TILE) / 2.0
 			match c:
 				"o", "k":
-					var pk := Pickup.new()
-					pk.kind = "orb" if c == "o" else "key"
-					pk.position = center
-					world.add_child(pk)
+					var id := "%s_%d_%d" % [c, x, y]
+					if c == "o":
+						orb_count += 1
+					if not Game.is_marked(id):
+						var pk := Pickup.new()
+						pk.set_meta("id", id)
+						pk.kind = "orb" if c == "o" else "key"
+						pk.position = center
+						world.add_child(pk)
 				"L":
 					var l := Lantern.new()
 					l.position = center
@@ -318,16 +327,26 @@ func _build_objects() -> void:
 		sg.position = Vector2(sign_cells[i] * TILE)
 		world.add_child(sg)
 
+	Game.set_orb_total(orb_count)
+
 	for group in _groups("D"):
 		var r := _bounds(group)
+		var door_id := "door_%d_%d" % [r.position.x, r.position.y]
+		if Game.is_marked(door_id):
+			continue
 		var door := Door.new()
+		door.set_meta("id", door_id)
 		door.height = r.size.y
 		door.position = Vector2(r.position * TILE)
 		world.add_child(door)
 
 	for group in _groups("B"):
 		var r := _bounds(group)
+		var brk_id := "brk_%d_%d" % [r.position.x, r.position.y]
+		if Game.is_marked(brk_id):
+			continue
 		var br := Breakable.new()
+		br.set_meta("id", brk_id)
 		for p in group:
 			br.cells.append(p - r.position)
 		br.position = Vector2(r.position * TILE)
@@ -389,6 +408,8 @@ func _spawn_player_and_camera() -> void:
 		var x := rows[y].find("P")
 		if x >= 0:
 			start = Vector2(x * TILE + TILE / 2.0, (y + 1) * TILE)
+	if Game.has_save and Game.checkpoint != Vector2.ZERO:
+		start = Game.checkpoint
 	player = PlayerScene.instantiate()
 	player.position = start
 	world.add_child(player)

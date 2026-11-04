@@ -34,4 +34,7 @@ func _process(_delta: float) -> void:
 		var a := _anchors[i]
 		var s: Sprite2D = children[i]
 		s.position = a + (a - c) * parallax
-		s.visible = absf(s.position.x - c.x) < 1300.0
+		var dx := absf(s.position.x - c.x)
+		s.visible = dx < 1400.0
+		# only frame the screen edges; never block the view of the player
+		s.modulate.a = 0.95 * smoothstep(380.0, 640.0, dx)

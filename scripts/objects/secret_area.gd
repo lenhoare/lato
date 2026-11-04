@@ -9,6 +9,7 @@ var _inside := 0
 
 
 func _ready() -> void:
+	_found = Game.is_marked(get_meta("id", ""))
 	collision_layer = 0
 	collision_mask = 2
 	for r in rects:
@@ -29,6 +30,7 @@ func _on_enter(body: Node) -> void:
 	create_tween().tween_property(cover, "modulate:a", 0.12, 0.35)
 	if not _found:
 		_found = true
+		Game.mark(get_meta("id", ""))
 		Game.show_banner.emit("Secret found", "")
 		Sfx.play("secret", 1.0, 0.0, 0.0)
 		FX.burst(get_parent(), body.global_position + Vector2(0, -21), Color(1.6, 1.5, 0.9), 20, 220.0, 0.6)

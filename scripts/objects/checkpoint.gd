@@ -27,12 +27,18 @@ func _ready() -> void:
 	_light.position = Vector2(TILE / 2.0, 20)
 	add_child(_light)
 	body_entered.connect(_on_body_entered)
+	# light up the flag we restored from a save
+	if Game.has_save and Game.checkpoint.distance_to(global_position + Vector2(TILE / 2.0, TILE)) < 1.0:
+		_active = true
+		_flag.texture = load("res://assets/PNG/Other/flagGreen_up.png")
+		_light.energy = 1.0
 
 
 func _on_body_entered(body: Node) -> void:
 	if not body is Player:
 		return
 	Game.checkpoint = global_position + Vector2(TILE / 2.0, TILE)
+	Game.save_game()
 	if _active:
 		return
 	for c in get_tree().get_nodes_in_group("checkpoint"):

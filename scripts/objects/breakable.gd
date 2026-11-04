@@ -26,6 +26,7 @@ func shatter(dir: int) -> void:
 	if _broken:
 		return
 	_broken = true
+	Game.mark(get_meta("id", ""))
 	collision_layer = 0
 	for child in get_children():
 		if child is CollisionShape2D:

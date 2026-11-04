@@ -22,7 +22,8 @@ The first open takes a few seconds while Godot imports the art.
 | Jump (hold for higher) | Space, Z or K | A |
 | Dash *(unlockable)* | Shift, X or L | X, RB or RT |
 | Bash *(unlockable)*: hold to aim, release to launch | C, J or E | Y, B or LT |
-| Restart from the beginning | R | Back |
+| Pause | Esc or P | Start |
+| Restart from the beginning (wipes the save) | R | Back |
 | Fullscreen | F11 | |
 
 ## What's in it
@@ -54,6 +55,22 @@ The first open takes a few seconds while Godot imports the art.
 2. **Spirit Dash**: a fast horizontal burst that breaks cracked stone. Dash-jumping keeps your momentum.
 3. **Bash**: near a lantern or an enemy, hold Bash. Time slows down while you aim; release to launch. The object gets knocked the other way.
 4. **Glide**: press jump in mid-air and keep holding it. Rising winds (updrafts) lift you.
+
+## Bells and whistles
+
+- **Sound:** every sound effect and the ambient music is generated in code at startup
+  (`scripts/sfx.gd`, autoload `Sfx`), so there are no audio files. Orb chimes climb a
+  scale when you grab them in a row. Glide wind and wall-slide scrape are loops that fade
+  in and out. Reverb is on the `SFX` and `Music` buses.
+  To use real recordings later, put them in `Sfx.sounds["jump"] = load("res://audio/jump.ogg")`, and so on.
+- **Saving:** touching a checkpoint or a shrine saves your progress: skills, orbs,
+  opened doors, broken walls and secrets found. Quit and relaunch to continue. On the
+  title screen, **N** starts a new game, and **R** in-game also wipes the save and restarts.
+- **Title screen**, **pause menu** (Esc / Start, showing orbs, time, falls and skills),
+  and a finish screen with your time.
+- **Living world:** plants sway in the wind and get pushed aside when you run
+  through them or land near them. Dark foreground silhouettes frame the screen edges.
+- Wall-slide sparks, footstep dust, and gamepad rumble on impacts.
 
 ## Tuning the feel
 
@@ -118,7 +135,9 @@ scripts/player.gd      character controller and animation
 scripts/main.gd        level builder, lighting, glow
 scripts/fx.gd          procedural effects (glows, bursts, rings, afterimages)
 scripts/objects/       orbs, keys, doors, shrines, lanterns, enemies, secrets, ...
+scripts/sfx.gd         procedural sound effects and music (autoload "Sfx")
 tools/shot.gd          dev helper: scripted input and screenshots, for testing movement headlessly
+tools/audio_check.gd   dev helper: prints sound levels and saves every sound as a .wav
 levels/level1.txt      the level
 ```
 

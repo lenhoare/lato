@@ -12,6 +12,7 @@ var _hint_label: Label
 var _flash: ColorRect
 var _banner_tween: Tween
 var _hint_tween: Tween
+var _toast: Label
 
 
 func _ready() -> void:
@@ -90,6 +91,19 @@ func _ready() -> void:
 	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint.add_child(_hint_label)
 
+	_toast = _make_label(20)
+	_toast.text = "Progress saved"
+	_toast.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_toast.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_toast.offset_right = -28
+	_toast.offset_top = 22
+	_toast.modulate = Color(0.75, 1.0, 0.85, 0.0)
+	add_child(_toast)
+	Game.saved.connect(func() -> void:
+		var t := create_tween()
+		t.tween_property(_toast, "modulate:a", 1.0, 0.3)
+		t.tween_interval(1.5)
+		t.tween_property(_toast, "modulate:a", 0.0, 0.8))
 	Game.orbs_changed.connect(_on_orbs)
 	Game.keys_changed.connect(_on_keys)
 	Game.show_banner.connect(_on_banner)

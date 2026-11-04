@@ -10,6 +10,9 @@ signal show_hint(text: String)
 signal hide_hint
 signal camera_shake(strength: float, duration: float)
 signal screen_flash(color: Color, duration: float)
+signal saved
+
+const SAVE_PATH := "user://save.json"
 
 const ABILITIES := {
 	"double_jump": {"name": "Double Jump", "hint": "Press Jump again in mid-air."},
@@ -26,6 +29,11 @@ var checkpoint := Vector2.ZERO
 var play_time := 0.0
 var deaths := 0
 var finished := false
+## ids ("orb_12_30", "door_100_22", ...) of things collected / opened / found
+var collected := {}
+var has_save := false
+## set by test tools to skip the title screen
+var skip_title := false
 var player: Node2D
 
 var _slowmo_tween: Tween
@@ -34,6 +42,69 @@ var _slowmo_tween: Tween
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_input()
+	load_game()
+
+
+# --- Saving -------------------------------------------------------------------
+
+func mark(id: String) -> void:
+	collected[id] = true
+
+
+func is_marked(id: String) -> bool:
+	return collected.has(id)
+
+
+func save_game() -> void:
+	var data := {
+		"abilities": abilities,
+		"orbs": orbs,
+		"keys": keys,
+		"checkpoint": [checkpoint.x, checkpoint.y],
+		"play_time": play_time,
+		"deaths": deaths,
+		"collected": collected.keys(),
+	}
+	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(data))
+		has_save = true
+		saved.emit()
+
+
+func load_game() -> bool:
+	if not FileAccess.file_exists(SAVE_PATH):
+		return false
+	var data = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
+	if typeof(data) != TYPE_DICTIONARY:
+		return false
+	for k in abilities.keys():
+		abilities[k] = bool(data.get("abilities", {}).get(k, false))
+	orbs = int(data.get("orbs", 0))
+	keys = int(data.get("keys", 0))
+	var cp: Array = data.get("checkpoint", [0, 0])
+	checkpoint = Vector2(cp[0], cp[1])
+	play_time = float(data.get("play_time", 0.0))
+	deaths = int(data.get("deaths", 0))
+	collected.clear()
+	for id in data.get("collected", []):
+		collected[id] = true
+	has_save = true
+	return true
+
+
+func new_game() -> void:
+	abilities = {"double_jump": false, "dash": false, "bash": false, "glide": false}
+	orbs = 0
+	keys = 0
+	checkpoint = Vector2.ZERO
+	play_time = 0.0
+	deaths = 0
+	finished = false
+	collected.clear()
+	has_save = false
+	if FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
 
 
 func _process(delta: float) -> void:
@@ -61,8 +132,8 @@ func add_orb() -> void:
 	orbs_changed.emit(orbs, orbs_total)
 
 
-func register_orb() -> void:
-	orbs_total += 1
+func set_orb_total(total: int) -> void:
+	orbs_total = total
 	orbs_changed.emit(orbs, orbs_total)
 
 
@@ -121,16 +192,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	elif event.is_action_pressed("restart"):
-		Engine.time_scale = 1.0
-		get_tree().paused = false
-		play_time = 0.0
-		deaths = 0
-		finished = false
-		abilities = {"double_jump": false, "dash": false, "bash": false, "glide": false}
-		orbs = 0
-		orbs_total = 0
-		keys = 0
-		get_tree().reload_current_scene()
+		restart(true)
+
+
+## Reload the level. `fresh` wipes the save and starts a new game.
+func restart(fresh: bool) -> void:
+	Engine.time_scale = 1.0
+	get_tree().paused = false
+	if fresh:
+		new_game()
+	else:
+		load_game()
+	get_tree().reload_current_scene()
 
 
 # --- Input map --------------------------------------------------------------

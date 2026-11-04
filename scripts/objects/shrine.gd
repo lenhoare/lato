@@ -67,6 +67,11 @@ func _ready() -> void:
 	_motes.color = Color(color, 0.7)
 	add_child(_motes)
 	body_entered.connect(_on_body_entered)
+	if Game.has(ability):
+		_taken = true
+		_crystal.visible = false
+		_motes.emitting = false
+		_light.energy = 0.25
 
 
 func _process(delta: float) -> void:
@@ -101,5 +106,6 @@ func _on_body_entered(body: Node) -> void:
 	t.chain().tween_callback(func() -> void:
 		_crystal.visible = false
 		FX.burst(get_parent(), p.global_position + Vector2(0, -21), color, 30, 300.0, 0.6)
-		Game.unlock(ability))
+		Game.unlock(ability)
+		Game.save_game())
 	_motes.emitting = false

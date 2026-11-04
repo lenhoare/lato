@@ -12,6 +12,11 @@ func _ready() -> void:
 		var kv := a.split("=")
 		if kv.size() == 2:
 			args[kv[0]] = kv[1]
+	Game.skip_title = args.get("title", "0") != "1"
+	if args.get("keep", "0") != "1":
+		Game.new_game()
+	else:
+		Game.load_game()
 	if args.get("all", "0") == "1":
 		for k in Game.abilities.keys():
 			Game.abilities[k] = true

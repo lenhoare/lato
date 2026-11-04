@@ -115,7 +115,8 @@ func _ready() -> void:
 	_load_frames()
 	_set_frame("stand")
 	Game.player = self
-	Game.checkpoint = global_position
+	if Game.checkpoint == Vector2.ZERO:
+		Game.checkpoint = global_position
 	arrow = BashArrow.new()
 	arrow.visible = false
 	arrow.top_level = true

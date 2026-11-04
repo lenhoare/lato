@@ -37,8 +37,6 @@ func _ready() -> void:
 	add_child(light)
 	_home = global_position
 	body_entered.connect(_on_body_entered)
-	if kind == "orb":
-		Game.register_orb()
 
 
 func _physics_process(delta: float) -> void:
@@ -61,6 +59,7 @@ func _on_body_entered(body: Node) -> void:
 	if _collected or not body is Player:
 		return
 	_collected = true
+	Game.mark(get_meta("id", ""))
 	if kind == "orb":
 		Game.add_orb()
 		Sfx.play_orb()
