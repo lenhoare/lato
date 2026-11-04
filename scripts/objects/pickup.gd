@@ -63,7 +63,9 @@ func _on_body_entered(body: Node) -> void:
 	_collected = true
 	if kind == "orb":
 		Game.add_orb()
+		Sfx.play_orb()
 	else:
+		Sfx.play("key")
 		Game.add_key()
 		Game.show_banner.emit("Key", "It opens a locked door.")
 	FX.burst(get_parent(), global_position, COLORS[kind], 14, 220.0, 0.45, 0.8)

@@ -23,6 +23,9 @@ var orbs := 0
 var orbs_total := 0
 var keys := 0
 var checkpoint := Vector2.ZERO
+var play_time := 0.0
+var deaths := 0
+var finished := false
 var player: Node2D
 
 var _slowmo_tween: Tween
@@ -31,6 +34,15 @@ var _slowmo_tween: Tween
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_input()
+
+
+func _process(delta: float) -> void:
+	if not get_tree().paused and not finished and is_instance_valid(player):
+		play_time += delta / maxf(Engine.time_scale, 0.001)
+
+
+func format_time(t: float) -> String:
+	return "%d:%02d" % [int(t) / 60, int(t) % 60]
 
 
 func has(ability: String) -> bool:
@@ -71,6 +83,12 @@ func shake(strength: float, duration: float = 0.25) -> void:
 	camera_shake.emit(strength, duration)
 
 
+## Gamepad vibration (does nothing without a controller).
+func rumble(weak: float, strong: float, duration: float) -> void:
+	for id in Input.get_connected_joypads():
+		Input.start_joy_vibration(id, weak, strong, duration)
+
+
 func flash(color: Color, duration: float = 0.3) -> void:
 	screen_flash.emit(color, duration)
 
@@ -104,6 +122,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	elif event.is_action_pressed("restart"):
 		Engine.time_scale = 1.0
+		get_tree().paused = false
+		play_time = 0.0
+		deaths = 0
+		finished = false
 		abilities = {"double_jump": false, "dash": false, "bash": false, "glide": false}
 		orbs = 0
 		orbs_total = 0
@@ -123,6 +145,7 @@ func _setup_input() -> void:
 	_action("dash", [KEY_SHIFT, KEY_X, KEY_L], [JOY_BUTTON_X, JOY_BUTTON_RIGHT_SHOULDER], [[JOY_AXIS_TRIGGER_RIGHT, 1.0]])
 	_action("bash", [KEY_C, KEY_J, KEY_E], [JOY_BUTTON_Y, JOY_BUTTON_B], [[JOY_AXIS_TRIGGER_LEFT, 1.0]])
 	_action("restart", [KEY_R], [JOY_BUTTON_BACK], [])
+	_action("pause", [KEY_ESCAPE, KEY_P], [JOY_BUTTON_START], [])
 	_action("toggle_fullscreen", [KEY_F11], [], [])
 
 

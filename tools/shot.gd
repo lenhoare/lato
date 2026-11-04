@@ -117,3 +117,12 @@ func _script_door(f: int, p: Player) -> void:
 	if f == 3: Game.add_key()
 	if f == 10: Input.action_press("move_right")
 	if f % 20 == 0: _log(p)
+
+func _script_fgdebug(f: int, p: Player) -> void:
+	if f == 30:
+		var fg = main.get_node("World/Foreground")
+		var c := get_viewport().get_camera_2d().get_screen_center_position()
+		print("cam ", c, " count ", fg.get_child_count())
+		for s in fg.get_children():
+			if abs(s.position.x - c.x) < 900:
+				print(s.position, " scale ", s.scale, " vis ", s.visible, " tex ", s.texture.get_size(), " z ", fg.z_index)

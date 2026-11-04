@@ -133,8 +133,9 @@ func _on_banner(title: String, subtitle: String) -> void:
 	_banner_tween = create_tween().set_ignore_time_scale(true)
 	_banner.modulate.a = 0.0
 	_banner_tween.tween_property(_banner, "modulate:a", 1.0, 0.4)
-	_banner_tween.tween_interval(3.2)
-	_banner_tween.tween_property(_banner, "modulate:a", 0.0, 0.8)
+	if not Game.finished:  # the end screen stays up
+		_banner_tween.tween_interval(3.2)
+		_banner_tween.tween_property(_banner, "modulate:a", 0.0, 0.8)
 
 
 func _on_hint(text: String) -> void:

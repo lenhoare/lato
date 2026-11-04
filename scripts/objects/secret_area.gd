@@ -30,6 +30,7 @@ func _on_enter(body: Node) -> void:
 	if not _found:
 		_found = true
 		Game.show_banner.emit("Secret found", "")
+		Sfx.play("secret", 1.0, 0.0, 0.0)
 		FX.burst(get_parent(), body.global_position + Vector2(0, -21), Color(1.6, 1.5, 0.9), 20, 220.0, 0.6)
 
 

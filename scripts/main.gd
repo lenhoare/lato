@@ -40,6 +40,9 @@ const Spirit := preload("res://scripts/spirit.gd")
 const GameCamera := preload("res://scripts/game_camera.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Background := preload("res://scripts/background.gd")
+const Plants := preload("res://scripts/plants.gd")
+const Foreground := preload("res://scripts/foreground.gd")
+const PauseMenu := preload("res://scripts/pause_menu.gd")
 
 const SHRINES := {"1": "double_jump", "2": "dash", "3": "bash", "4": "glide"}
 
@@ -66,6 +69,7 @@ func _ready() -> void:
 	_build_decorations()
 	_spawn_player_and_camera()
 	add_child(Hud.new())
+	add_child(PauseMenu.new())
 
 
 # ---------------------------------------------------------------------------
@@ -345,24 +349,34 @@ func _build_decorations() -> void:
 		plants.append(load("res://assets/PNG/Other/plantBlue_%d.png" % n))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
-	var deco := Node2D.new()
+	var deco := Plants.new()
 	deco.name = "Decorations"
 	deco.z_index = -1
 	world.add_child(deco)
+	var fg := Foreground.new()
+	fg.name = "Foreground"
+	world.add_child(fg)
+	var dark: Array[Texture2D] = []
+	for n in [1, 2, 3, 5, 6]:
+		dark.append(load("res://assets/PNG/Other/plantDark_%d.png" % n))
+	var last_fg := -100
 	for y in range(1, height):
 		for x in width:
 			if cell(x, y) != "#" or cell(x, y - 1) != " ":
 				rng.randf()
 				continue
+			# occasional big dark silhouette in the foreground
+			if absi(x - last_fg) > 6 and _ground(x, y + 2) and rng.randf() < 0.1:
+				last_fg = x
+				for k in rng.randi_range(1, 3):
+					fg.add_silhouette(dark[rng.randi() % dark.size()],
+							Vector2(x * TILE + k * rng.randf_range(50, 110), y * TILE + 40),
+							rng.randf_range(4.5, 7.0), rng.randf() < 0.5)
 			if rng.randf() > decoration_density:
 				continue
 			var tex := plants[rng.randi() % plants.size()]
-			var s := Sprite2D.new()
-			s.texture = tex
-			s.centered = false
-			s.flip_h = rng.randf() < 0.5
-			s.position = Vector2(x * TILE + rng.randf_range(0, TILE - tex.get_width()), y * TILE - tex.get_height() + 4)
-			deco.add_child(s)
+			var base := Vector2(x * TILE + tex.get_width() / 2.0 + rng.randf_range(0, TILE - tex.get_width()), y * TILE + 4)
+			deco.add_plant(tex, base, rng.randf() < 0.5)
 
 
 # ---------------------------------------------------------------------------

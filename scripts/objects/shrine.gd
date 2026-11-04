@@ -87,6 +87,8 @@ func _on_body_entered(body: Node) -> void:
 	Game.ease_time_scale(1.0, 1.2)
 	Game.flash(Color(color, 0.5), 0.6)
 	Game.shake(6.0, 0.6)
+	Game.rumble(0.3, 0.3, 0.6)
+	Sfx.play("shrine", 1.0, 0.0, 0.0)
 	var pos := _crystal.global_position
 	FX.ring(get_parent(), pos, color, 260.0, 0.8, 10.0)
 	FX.ring(get_parent(), pos, Color(1.6, 1.8, 2.0), 160.0, 0.6, 4.0)

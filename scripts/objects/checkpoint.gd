@@ -39,6 +39,7 @@ func _on_body_entered(body: Node) -> void:
 		if c != self:
 			c.deactivate()
 	_active = true
+	Sfx.play("checkpoint", 1.0, -3.0, 0.0)
 	_flag.texture = load("res://assets/PNG/Other/flagGreen_up.png")
 	_flag.scale = Vector2(0.5, 1.3)
 	create_tween().tween_property(_flag, "scale", Vector2.ONE, 0.4).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)

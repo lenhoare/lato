@@ -46,6 +46,7 @@ func _on_touch(body: Node) -> void:
 		_open = true
 		Game.hide_hint.emit()
 		Game.shake(6.0, 0.5)
+		Sfx.play("door")
 		var center := global_position + Vector2(TILE / 2.0, TILE * height / 2.0)
 		FX.burst(get_parent(), center, Color(0.7, 1.7, 0.8), 30, 300.0, 0.7, 1.2)
 		FX.ring(get_parent(), center, Color(0.7, 1.7, 0.8), 140.0, 0.5, 6.0)
@@ -57,3 +58,4 @@ func _on_touch(body: Node) -> void:
 			t.tween_property(s, "modulate:a", 0.0, 0.7)
 	else:
 		Game.show_hint.emit("Locked.  You need a key.")
+		Sfx.play("locked")

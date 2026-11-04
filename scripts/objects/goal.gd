@@ -37,8 +37,11 @@ func _on_enter(body: Node) -> void:
 	_done = true
 	Game.flash(Color(1, 1, 1, 0.8), 1.2)
 	Game.set_time_scale(0.3)
+	Sfx.play("goal", 0.75, 0.0, 0.0)
 	Game.ease_time_scale(1.0, 1.5)
 	FX.ring(get_parent(), _core.global_position, Color(1.5, 1.8, 2.0), 420.0, 1.2, 12.0)
 	FX.burst(get_parent(), _core.global_position, Color(0.8, 1.2, 2.0), 80, 600.0, 1.4, 1.8)
+	Game.finished = true
 	Game.show_banner.emit("The light is restored",
-			"Spirit orbs: %d / %d      (R to play again)" % [Game.orbs, Game.orbs_total])
+			"Spirit orbs  %d / %d      Time  %s      Falls  %d\n\nR to play again" % [
+				Game.orbs, Game.orbs_total, Game.format_time(Game.play_time), Game.deaths])

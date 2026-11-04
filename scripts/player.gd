@@ -96,6 +96,8 @@ var bash_start_ms := 0
 var trail_timer := 0.0
 var anim_time := 0.0
 var spin := 0.0
+var _last_step := -1
+var _spark_timer := 0.0
 
 var frames := {}
 
@@ -309,6 +311,7 @@ func _jump() -> void:
 		velocity.y *= 0.6  # buffered tap: small hop
 	_squash(Vector2(0.72, 1.32))
 	FX.dust(get_parent(), global_position, 6, Vector2.UP, 120.0)
+	Sfx.play("jump")
 
 
 func _double_jump() -> void:
@@ -318,6 +321,7 @@ func _double_jump() -> void:
 	can_jump_cut = true
 	spin = TAU * facing
 	_squash(Vector2(0.8, 1.25))
+	Sfx.play("double_jump")
 	FX.burst(get_parent(), global_position, SPIRIT_BLUE, 14, 220.0, 0.45, 1.0, Vector2.DOWN, 50.0)
 	FX.ring(get_parent(), global_position + Vector2(0, -4), Color(0.6, 0.9, 1.5, 0.8), 46.0, 0.3, 4.0)
 
@@ -336,6 +340,7 @@ func _wall_jump(dir: int) -> void:
 	facing = -dir
 	_squash(Vector2(0.75, 1.3))
 	FX.dust(get_parent(), global_position + Vector2(dir * 14, -20), 6, Vector2(-dir, -0.3), 160.0)
+	Sfx.play("wall_jump")
 
 
 func _start_dash(input_x: float) -> void:
@@ -350,6 +355,8 @@ func _start_dash(input_x: float) -> void:
 	FX.burst(get_parent(), global_position + Vector2(0, -BODY_HALF_HEIGHT), SPIRIT_BLUE, 16, 300.0,
 			0.35, 1.0, Vector2(-dash_dir, 0), 35.0)
 	Game.shake(3.0, 0.12)
+	Game.rumble(0.3, 0.0, 0.12)
+	Sfx.play("dash")
 
 
 func _process_dash(delta: float) -> void:
@@ -410,6 +417,7 @@ func _try_bash() -> void:
 	arrow.aim = bash_aim
 	if bash_target.has_method("on_bash_grab"):
 		bash_target.on_bash_grab()
+	Sfx.play("bash_grab", 1.0, -2.0, 0.0)
 
 
 func _process_bash_aim(real_delta: float) -> void:
@@ -449,6 +457,8 @@ func _bash_launch() -> void:
 	FX.ring(get_parent(), target_pos, Color(0.7, 0.95, 1.8), 120.0, 0.4, 8.0)
 	FX.burst(get_parent(), target_pos, SPIRIT_BLUE, 30, 420.0, 0.5, 1.2, -bash_aim, 40.0)
 	Game.shake(9.0, 0.25)
+	Game.rumble(0.4, 0.6, 0.2)
+	Sfx.play("bash")
 
 
 func _end_bash_aim() -> void:
@@ -468,6 +478,9 @@ func _land(impact: float) -> void:
 		FX.dust(get_parent(), global_position + Vector2(10, 0), int(4 + 6 * t), Vector2(1, -0.4), 90.0 + 120.0 * t)
 	if impact > 1100.0:
 		Game.shake(5.0, 0.15)
+		Game.rumble(0.2, 0.4, 0.12)
+	if impact > 150.0:
+		Sfx.play("land", 1.0, linear_to_db(0.35 + 0.65 * t))
 
 
 func _corner_correction(delta: float) -> void:
@@ -503,9 +516,12 @@ func die() -> void:
 	if state == State.BASH_AIM:
 		_end_bash_aim()
 	state = State.DEAD
+	Game.deaths += 1
 	velocity = Vector2.ZERO
 	_set_frame("dead")
 	Game.shake(12.0, 0.3)
+	Game.rumble(0.6, 0.8, 0.35)
+	Sfx.play("death")
 	FX.burst(get_parent(), global_position + Vector2(0, -BODY_HALF_HEIGHT), Color(1.6, 0.9, 0.9), 30, 380.0, 0.7)
 	Game.hitstop(0.08, 0.05)
 	var t := create_tween()
@@ -524,6 +540,7 @@ func respawn() -> void:
 	dash_available = true
 	visual.modulate.a = 1.0
 	_squash(Vector2(0.6, 1.4))
+	Sfx.play("respawn")
 	FX.ring(get_parent(), global_position + Vector2(0, -BODY_HALF_HEIGHT), Color(0.7, 0.95, 1.8), 70.0, 0.4, 5.0)
 	FX.burst(get_parent(), global_position + Vector2(0, -BODY_HALF_HEIGHT), SPIRIT_BLUE, 20, 200.0, 0.5)
 
@@ -553,6 +570,16 @@ func _squash(s: Vector2) -> void:
 
 func _process(delta: float) -> void:
 	var rd := delta / maxf(Engine.time_scale, 0.001)  # real time, for bash slow-mo
+	var alive := state == State.NORMAL
+	Sfx.set_loop_volume("glide", 0.55 if (alive and gliding) else 0.0)
+	var sliding := alive and wall_sliding and velocity.y > 60.0
+	Sfx.set_loop_volume("wall", 0.4 if sliding else 0.0)
+	if sliding:
+		_spark_timer -= delta
+		if _spark_timer <= 0.0:
+			_spark_timer = 0.05
+			FX.burst(get_parent(), global_position + Vector2(wall_dir * 14, -30), Color(0.9, 1.1, 1.4),
+					2, 90.0, 0.35, 0.6, Vector2(-wall_dir, -1.5), 30.0, 300.0)
 	visual.scale = visual.scale.lerp(Vector2.ONE, 1.0 - exp(-12.0 * delta))
 	sprite.flip_h = facing < 0
 	var target_rot := 0.0
@@ -586,7 +613,13 @@ func _process(delta: float) -> void:
 			elif absf(velocity.x) > 20.0:
 				anim_time += delta * (6.0 + 8.0 * speed_ratio)
 				var cycle := ["walk1", "walk2", "walk3", "walk2"]
-				_set_frame(cycle[int(anim_time) % cycle.size()])
+				var step_i := int(anim_time) % cycle.size()
+				if step_i != _last_step and step_i % 2 == 0:
+					Sfx.play("step", 1.0, -6.0, 0.15)
+					if speed_ratio > 0.8:
+						FX.dust(get_parent(), global_position - Vector2(facing * 8, 0), 2, Vector2(-facing, -0.6), 60.0)
+				_last_step = step_i
+				_set_frame(cycle[step_i])
 				target_rot = clampf(velocity.x / max_speed, -1.0, 1.0) * 0.12
 			else:
 				anim_time = 0.0

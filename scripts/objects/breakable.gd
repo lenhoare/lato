@@ -31,6 +31,8 @@ func shatter(dir: int) -> void:
 		if child is CollisionShape2D:
 			child.set_deferred("disabled", true)
 	Game.shake(8.0, 0.25)
+	Game.rumble(0.5, 0.5, 0.2)
+	Sfx.play("break")
 	Game.hitstop(0.04, 0.1)
 	for c in cells:
 		var center := global_position + Vector2(c) * TILE + Vector2(TILE, TILE) / 2.0
