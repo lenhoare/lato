@@ -64,6 +64,11 @@ enum State { NORMAL, DASH, BASH_AIM, DEAD, FROZEN }
 ## Jump at the surface leaps out (fraction of a normal jump).
 @export var water_jump_mult := 0.95
 
+@export_group("Light Burst")
+@export var burst_speed := 950.0
+@export var burst_cooldown := 0.4
+@export var burst_seek_range := 520.0
+
 @export_group("Bash")
 @export var bash_radius := 210.0
 @export var bash_speed := 1200.0
@@ -72,6 +77,7 @@ enum State { NORMAL, DASH, BASH_AIM, DEAD, FROZEN }
 @export var bash_time_scale := 0.04
 
 const BODY_HALF_HEIGHT := 21.0
+const LightBurst := preload("res://scripts/objects/light_burst.gd")
 const SPIRIT_BLUE := Color(0.55, 0.85, 1.6)
 
 var state: State = State.NORMAL
@@ -109,6 +115,7 @@ var _last_step := -1
 var _spark_timer := 0.0
 var _whoosh_timer := 0.0
 var swimming := false
+var _burst_timer := 0.0
 var _swim_kick_timer := 0.0
 
 var frames := {}
@@ -197,6 +204,10 @@ func _tick_timers(delta: float) -> void:
 	bash_launch_timer -= delta
 	land_timer -= delta
 	jump_anim_timer -= delta
+	_burst_timer -= delta
+	if Input.is_action_just_pressed("attack") and Game.has("light_burst") and _burst_timer <= 0.0 \
+			and (state == State.NORMAL or state == State.DASH):
+		_light_burst()
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer_timer = jump_buffer_time
 		if not is_on_floor():
@@ -481,6 +492,37 @@ func _process_dash(delta: float) -> void:
 		state = State.NORMAL
 		velocity.x = dash_dir * max_speed * 1.15
 		dash_cooldown_timer = dash_cooldown
+
+
+func _light_burst() -> void:
+	_burst_timer = burst_cooldown
+	var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var dir := input.normalized() if input.length() > 0.3 else Vector2(facing, -0.15).normalized()
+	var origin := global_position + Vector2(0, -BODY_HALF_HEIGHT)
+	var spirit := get_tree().get_first_node_in_group("spirit") as Node2D
+	if spirit and spirit.global_position.distance_to(origin) < 200.0:
+		origin = spirit.global_position
+	# seek the nearest enemy roughly in the direction we're throwing
+	var best: Node2D = null
+	var best_d := burst_seek_range
+	for e in get_tree().get_nodes_in_group("enemy"):
+		var en := e as Node2D
+		if en == null or not en.is_visible_in_tree():
+			continue
+		var to := en.global_position - origin
+		var d := to.length()
+		if d < best_d and (input.length() <= 0.3 or to.normalized().dot(dir) > 0.3):
+			best_d = d
+			best = en
+	if best:
+		dir = (best.global_position - origin).normalized()
+	var b := LightBurst.new()
+	b.velocity = dir * burst_speed
+	b.target = best
+	get_parent().add_child(b)
+	b.global_position = origin
+	Sfx.play("burst_throw")
+	FX.burst(get_parent(), origin, Color(1.7, 1.5, 0.9), 8, 160.0, 0.3, 0.7, dir, 40.0)
 
 
 func _try_bash() -> void:

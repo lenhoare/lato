@@ -22,9 +22,10 @@ const ABILITIES := {
 	"dash": {"name": "Spirit Dash", "hint": "Press Shift / X to dash.  Dash through cracked stone."},
 	"bash": {"name": "Bash", "hint": "Near a lantern or enemy, hold C to aim, release to launch."},
 	"glide": {"name": "Glide", "hint": "Press Jump in mid-air and keep holding it to glide."},
+	"light_burst": {"name": "Light Burst", "hint": "Press F / V to throw light.  It seeks enemies, breaks cracked stone, and you can Bash off it."},
 }
 
-var abilities := {"double_jump": false, "dash": false, "bash": false, "glide": false}
+var abilities := {"double_jump": false, "dash": false, "bash": false, "glide": false, "light_burst": false}
 var orbs := 0
 var orbs_total := 0
 var keys := 0
@@ -144,7 +145,7 @@ func load_game() -> bool:
 
 
 func new_game() -> void:
-	abilities = {"double_jump": false, "dash": false, "bash": false, "glide": false}
+	abilities = {"double_jump": false, "dash": false, "bash": false, "glide": false, "light_burst": false}
 	orbs = 0
 	keys = 0
 	checkpoint = Vector2.ZERO
@@ -269,6 +270,7 @@ func _setup_input() -> void:
 	_action("jump", [KEY_SPACE, KEY_Z, KEY_K], [JOY_BUTTON_A], [])
 	_action("dash", [KEY_SHIFT, KEY_X, KEY_L], [JOY_BUTTON_X, JOY_BUTTON_RIGHT_SHOULDER], [[JOY_AXIS_TRIGGER_RIGHT, 1.0]])
 	_action("bash", [KEY_C, KEY_J, KEY_E], [JOY_BUTTON_Y, JOY_BUTTON_B], [[JOY_AXIS_TRIGGER_LEFT, 1.0]])
+	_action("attack", [KEY_F, KEY_V], [JOY_BUTTON_LEFT_SHOULDER], [])
 	_action("restart", [KEY_R], [], [])
 	_action("map", [KEY_M, KEY_TAB], [JOY_BUTTON_BACK], [])
 	_action("pause", [KEY_ESCAPE, KEY_P], [JOY_BUTTON_START], [])

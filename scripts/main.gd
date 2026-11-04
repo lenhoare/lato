@@ -11,6 +11,7 @@ extends Node2D
 ##   C  checkpoint                  S  sign (texts after the --- line, in left-to-right order)
 ##   1  double jump shrine          2  dash shrine
 ##   3  bash shrine                 4  glide shrine
+##   5  light burst shrine
 ##   s  secret: looks solid but you can walk through it
 ##   W  updraft (rising wind)       G  goal
 ##   ~  water (swim!)
@@ -49,7 +50,7 @@ const MapScreen := preload("res://scripts/map_screen.gd")
 const Vine := preload("res://scripts/vine.gd")
 const Water := preload("res://scripts/water.gd")
 
-const SHRINES := {"1": "double_jump", "2": "dash", "3": "bash", "4": "glide"}
+const SHRINES := {"1": "double_jump", "2": "dash", "3": "bash", "4": "glide", "5": "light_burst"}
 
 var rows: PackedStringArray
 var sign_texts: PackedStringArray
@@ -373,7 +374,7 @@ func _build_objects() -> void:
 					cp.position = top_left
 					_marker(cp, "checkpoint")
 					world.add_child(cp)
-				"1", "2", "3", "4":
+				"1", "2", "3", "4", "5":
 					var sh := Shrine.new()
 					sh.ability = SHRINES[c]
 					sh.position = top_left

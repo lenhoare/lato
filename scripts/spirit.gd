@@ -13,6 +13,7 @@ var _particles: CPUParticles2D
 
 
 func _ready() -> void:
+	add_to_group("spirit")
 	z_index = 15
 	var light := FX.make_light(light_radius, Color(0.75, 0.9, 1.0), 1.15)
 	add_child(light)

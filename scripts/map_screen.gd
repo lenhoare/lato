@@ -116,8 +116,8 @@ func _open_map() -> void:
 	for b in Game.explored:
 		seen += b
 	var pct := 100.0 * seen / maxf(1.0, Game.explored.size())
-	_info.text = "Explored %d%%      Spirit orbs %d / %d      Skills %d / 4\n" % [
-			pct, Game.orbs, Game.orbs_total, Game.abilities.values().count(true)] + \
+	_info.text = "Explored %d%%      Spirit orbs %d / %d      Skills %d / %d\n" % [
+			pct, Game.orbs, Game.orbs_total, Game.abilities.values().count(true), Game.abilities.size()] + \
 			"M / Esc  close      Jump / Dash  zoom      move  pan"
 
 

@@ -7,6 +7,7 @@ var _broken := false
 
 
 func _ready() -> void:
+	add_to_group("breakable")
 	collision_layer = 1
 	for c in cells:
 		var shape := CollisionShape2D.new()
@@ -20,6 +21,15 @@ func _ready() -> void:
 		s.position = Vector2(c) * TILE
 		s.texture = load("res://assets/PNG/Other/blockBrown_broken.png")
 		add_child(s)
+
+
+## True if any of this wall's tiles is within `r` of `pos`.
+func touches(pos: Vector2, r: float) -> bool:
+	for c in cells:
+		var rect := Rect2(global_position + Vector2(c) * TILE, Vector2(TILE, TILE)).grow(r)
+		if rect.has_point(pos):
+			return true
+	return false
 
 
 func shatter(dir: int) -> void:

@@ -2,7 +2,7 @@ extends Area2D
 ## Ability shrine: a glowing crystal on a pedestal. Touching it grants an ability
 ## with a little ceremony (slow-mo, light burst, banner).
 
-@export_enum("double_jump", "dash", "bash", "glide") var ability := "double_jump"
+@export_enum("double_jump", "dash", "bash", "glide", "light_burst") var ability := "double_jump"
 
 const TILE := 64.0
 const CRYSTALS := {
@@ -10,6 +10,7 @@ const CRYSTALS := {
 	"dash": ["res://assets/PNG/Items/greenCrystal.png", Color(0.6, 1.8, 0.9)],
 	"bash": ["res://assets/PNG/Items/yellowCrystal.png", Color(1.8, 1.4, 0.6)],
 	"glide": ["res://assets/PNG/Items/redCrystal.png", Color(1.8, 0.7, 0.9)],
+	"light_burst": ["res://assets/PNG/Items/yellowJewel.png", Color(1.8, 1.6, 1.0)],
 }
 
 var _taken := false

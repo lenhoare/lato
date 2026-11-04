@@ -22,6 +22,7 @@ The first open takes a few seconds while Godot imports the art.
 | Jump (hold for higher) | Space, Z or K | A |
 | Dash *(unlockable)* | Shift, X or L | X, RB or RT |
 | Bash *(unlockable)*: hold to aim, release to launch | C, J or E | Y, B or LT |
+| Light Burst *(unlockable)* | F or V | LB |
 | Map | M or Tab | Select / Back |
 | Pause | Esc or P | Start |
 | Restart from the beginning (wipes the save) | R | Back |
@@ -56,6 +57,10 @@ The first open takes a few seconds while Godot imports the art.
 2. **Spirit Dash**: a fast horizontal burst that breaks cracked stone. Dash-jumping keeps your momentum.
 3. **Bash**: near a lantern or an enemy, hold Bash. Time slows down while you aim; release to launch. The object gets knocked the other way.
 4. **Glide**: press jump in mid-air and keep holding it. Rising winds (updrafts) lift you.
+5. **Light Burst**: the spirit throws a ball of light that seeks the nearest enemy
+   (or flies where you aim) and explodes. Enemies take 2 hits and come back after 10 s.
+   It also breaks cracked stone, and it's bashable in flight, so you can throw it and
+   Bash off your own light to reach higher. Its shrine is on the plateau, next to the Double Jump one.
 
 ## Swimming
 
@@ -120,7 +125,8 @@ P  player start           o  spirit orb              k  key
 D  locked door (2 tall)   B  breakable (dash) block  L  bash lantern
 E  floating enemy         C  checkpoint              S  sign
 1  double jump shrine     2  dash shrine             3  bash shrine
-4  glide shrine           s  secret (fake) wall      W  updraft
+4  glide shrine           5  light burst shrine      s  secret (fake) wall
+W  updraft
 G  goal                   ~  water
 ```
 

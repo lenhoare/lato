@@ -172,3 +172,10 @@ func _script_surface(f: int, p: Player) -> void:
 	if f == 120: Input.action_press("jump")
 	if f == 121: Input.action_press("move_left")
 	if f % 15 == 0: _log(p); print("   swim=", p.swimming)
+
+func _script_burst(f: int, p: Player) -> void:
+	if f == 20 or f == 90: _press("attack")
+	if f % 10 == 0:
+		for e in get_tree().get_nodes_in_group("enemy"):
+			if e.global_position.distance_to(p.global_position) < 600:
+				print("f=%d enemy hp=%d dead=%s pos=%s bursts=%d" % [f, e._hp, e._dead, e.global_position.round(), get_tree().get_nodes_in_group("bashable").size()])

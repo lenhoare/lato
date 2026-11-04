@@ -29,7 +29,7 @@ func _ready() -> void:
 	box.add_child(_stats)
 	_skills = _label("", 22)
 	box.add_child(_skills)
-	var controls := _label("Move  A/D   ·   Jump  Space   ·   Dash  Shift   ·   Bash  C (hold, aim, release)", 18)
+	var controls := _label("Move  A/D   ·   Jump  Space   ·   Dash  Shift   ·   Bash  C (hold, aim, release)   ·   Light Burst  F   ·   Map  M", 18)
 	controls.modulate = Color(0.75, 0.8, 0.95)
 	box.add_child(controls)
 	var keys := _label("Esc  resume      R  restart      Q  quit", 20)
