@@ -98,6 +98,7 @@ var anim_time := 0.0
 var spin := 0.0
 var _last_step := -1
 var _spark_timer := 0.0
+var _whoosh_timer := 0.0
 
 var frames := {}
 
@@ -323,6 +324,7 @@ func _double_jump() -> void:
 	spin = TAU * facing
 	_squash(Vector2(0.8, 1.25))
 	Sfx.play("double_jump")
+	Game.impulse(global_position + Vector2(0, 40), 170.0, 2.2)
 	FX.burst(get_parent(), global_position, SPIRIT_BLUE, 14, 220.0, 0.45, 1.0, Vector2.DOWN, 50.0)
 	FX.ring(get_parent(), global_position + Vector2(0, -4), Color(0.6, 0.9, 1.5, 0.8), 46.0, 0.3, 4.0)
 
@@ -358,6 +360,7 @@ func _start_dash(input_x: float) -> void:
 	Game.shake(3.0, 0.12)
 	Game.rumble(0.3, 0.0, 0.12)
 	Sfx.play("dash")
+	Game.impulse(global_position + Vector2(-dash_dir * 30, -10), 260.0, 2.5)
 
 
 func _process_dash(delta: float) -> void:
@@ -379,6 +382,7 @@ func _process_dash(delta: float) -> void:
 	if trail_timer <= 0.0:
 		trail_timer = 0.02
 		FX.afterimage(get_parent(), sprite, Color(0.5, 0.85, 1.6, 0.7), 0.22)
+		Game.impulse(global_position + Vector2(0, -10), 110.0, 1.2)
 	# dash-jump: keep a chunk of the speed
 	if jump_buffer_timer > 0.0 and (is_on_floor() or coyote_timer > 0.0):
 		state = State.NORMAL
@@ -460,6 +464,7 @@ func _bash_launch() -> void:
 	Game.shake(9.0, 0.25)
 	Game.rumble(0.4, 0.6, 0.2)
 	Sfx.play("bash")
+	Game.impulse(target_pos, 360.0, 3.5)
 
 
 func _end_bash_aim() -> void:
@@ -482,6 +487,8 @@ func _land(impact: float) -> void:
 		Game.rumble(0.2, 0.4, 0.12)
 	if impact > 150.0:
 		Sfx.play("land", 1.0, linear_to_db(0.35 + 0.65 * t))
+	if impact > 400.0:
+		Game.impulse(global_position + Vector2(0, 10), 90.0 + 140.0 * t, 0.8 + 2.2 * t)
 
 
 func _corner_correction(delta: float) -> void:
@@ -523,6 +530,7 @@ func die() -> void:
 	Game.shake(12.0, 0.3)
 	Game.rumble(0.6, 0.8, 0.35)
 	Sfx.play("death")
+	Game.impulse(global_position, 240.0, 3.0)
 	FX.burst(get_parent(), global_position + Vector2(0, -BODY_HALF_HEIGHT), Color(1.6, 0.9, 0.9), 30, 380.0, 0.7)
 	Game.hitstop(0.08, 0.05)
 	var t := create_tween()
@@ -651,6 +659,11 @@ func _process(delta: float) -> void:
 	var fast := velocity.length() > max_speed * 1.2 or gliding or bash_launch_timer > 0.0
 	trail.emitting = fast or (not on_floor and absf(velocity.y) > 700.0)
 	glow.modulate.a = lerpf(glow.modulate.a, 0.9 if (fast or gliding) else 0.35, 1.0 - exp(-6.0 * delta))
+	if gliding or bash_launch_timer > 0.0 or velocity.length() > max_speed * 1.3:
+		_whoosh_timer -= delta
+		if _whoosh_timer <= 0.0:
+			_whoosh_timer = 0.08
+			Game.impulse(global_position + Vector2(0, 30), 120.0, 0.7)
 	if bash_launch_timer > 0.0:
 		trail_timer -= delta
 		if trail_timer <= 0.0:

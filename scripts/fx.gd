@@ -27,6 +27,25 @@ static func glow_texture(size: int = 128, falloff: float = 1.0) -> Texture2D:
 	return tex
 
 
+## Small leaf shape for drifting-leaf particles.
+static func leaf_texture() -> Texture2D:
+	if _glow_cache.has("leaf"):
+		return _glow_cache["leaf"]
+	var img := Image.create_empty(24, 12, false, Image.FORMAT_RGBA8)
+	for y in 12:
+		for x in 24:
+			var u := (x - 11.5) / 12.0
+			var v := (y - 5.5) / 6.0
+			# pointed ellipse: narrower towards the ends
+			var w := 1.0 - u * u
+			if v * v < w * w:
+				var shade := 0.85 + 0.15 * (1.0 - absf(v))
+				img.set_pixel(x, y, Color(shade, shade, shade, 1.0))
+	var tex := ImageTexture.create_from_image(img)
+	_glow_cache["leaf"] = tex
+	return tex
+
+
 ## Small hard-ish dot used for particles.
 static func dot_texture() -> Texture2D:
 	if _glow_cache.has("dot"):

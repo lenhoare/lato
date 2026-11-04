@@ -44,6 +44,7 @@ func _on_touch(body: Node) -> void:
 		return
 	if Game.use_key():
 		_open = true
+		remove_from_group("map_marker")
 		Game.mark(get_meta("id", ""))
 		Game.hide_hint.emit()
 		Game.shake(6.0, 0.5)

@@ -11,6 +11,8 @@ signal hide_hint
 signal camera_shake(strength: float, duration: float)
 signal screen_flash(color: Color, duration: float)
 signal saved
+## Something pushed the air (dash, bash, landing...): plants and vines react.
+signal world_impulse(pos: Vector2, radius: float, strength: float)
 
 const SAVE_PATH := "user://save.json"
 
@@ -32,6 +34,9 @@ var finished := false
 ## ids ("orb_12_30", "door_100_22", ...) of things collected / opened / found
 var collected := {}
 var has_save := false
+## Map fog of war: one byte per level tile, 1 = seen.
+var explored := PackedByteArray()
+var map_size := Vector2i.ZERO
 ## set by test tools to skip the title screen
 var skip_title := false
 var player: Node2D
@@ -46,6 +51,32 @@ func _ready() -> void:
 
 
 # --- Saving -------------------------------------------------------------------
+
+func impulse(pos: Vector2, radius: float, strength: float) -> void:
+	world_impulse.emit(pos, radius, strength)
+
+
+func init_map(size: Vector2i) -> void:
+	if map_size != size or explored.size() != size.x * size.y:
+		map_size = size
+		explored = PackedByteArray()
+		explored.resize(size.x * size.y)
+
+
+## Mark tiles around `cell` as seen (elliptical, wider than tall like the screen).
+func reveal(cell: Vector2i, rx: int = 12, ry: int = 8) -> void:
+	if map_size == Vector2i.ZERO:
+		return
+	for y in range(maxi(0, cell.y - ry), mini(map_size.y, cell.y + ry + 1)):
+		var dy := float(y - cell.y) / ry
+		var half := int(rx * sqrt(maxf(0.0, 1.0 - dy * dy)))
+		for x in range(maxi(0, cell.x - half), mini(map_size.x, cell.x + half + 1)):
+			explored[y * map_size.x + x] = 1
+
+
+func is_explored(x: int, y: int) -> bool:
+	return x >= 0 and y >= 0 and x < map_size.x and y < map_size.y and explored[y * map_size.x + x] == 1
+
 
 func mark(id: String) -> void:
 	collected[id] = true
@@ -64,6 +95,9 @@ func save_game() -> void:
 		"play_time": play_time,
 		"deaths": deaths,
 		"collected": collected.keys(),
+		"map_w": map_size.x,
+		"map_h": map_size.y,
+		"explored": Marshalls.raw_to_base64(explored),
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
@@ -89,6 +123,8 @@ func load_game() -> bool:
 	collected.clear()
 	for id in data.get("collected", []):
 		collected[id] = true
+	map_size = Vector2i(int(data.get("map_w", 0)), int(data.get("map_h", 0)))
+	explored = Marshalls.base64_to_raw(str(data.get("explored", "")))
 	has_save = true
 	return true
 
@@ -102,6 +138,8 @@ func new_game() -> void:
 	deaths = 0
 	finished = false
 	collected.clear()
+	explored = PackedByteArray()
+	map_size = Vector2i.ZERO
 	has_save = false
 	if FileAccess.file_exists(SAVE_PATH):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
@@ -217,7 +255,8 @@ func _setup_input() -> void:
 	_action("jump", [KEY_SPACE, KEY_Z, KEY_K], [JOY_BUTTON_A], [])
 	_action("dash", [KEY_SHIFT, KEY_X, KEY_L], [JOY_BUTTON_X, JOY_BUTTON_RIGHT_SHOULDER], [[JOY_AXIS_TRIGGER_RIGHT, 1.0]])
 	_action("bash", [KEY_C, KEY_J, KEY_E], [JOY_BUTTON_Y, JOY_BUTTON_B], [[JOY_AXIS_TRIGGER_LEFT, 1.0]])
-	_action("restart", [KEY_R], [JOY_BUTTON_BACK], [])
+	_action("restart", [KEY_R], [], [])
+	_action("map", [KEY_M, KEY_TAB], [JOY_BUTTON_BACK], [])
 	_action("pause", [KEY_ESCAPE, KEY_P], [JOY_BUTTON_START], [])
 	_action("toggle_fullscreen", [KEY_F11], [], [])
 

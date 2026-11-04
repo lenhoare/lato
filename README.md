@@ -22,6 +22,7 @@ The first open takes a few seconds while Godot imports the art.
 | Jump (hold for higher) | Space, Z or K | A |
 | Dash *(unlockable)* | Shift, X or L | X, RB or RT |
 | Bash *(unlockable)*: hold to aim, release to launch | C, J or E | Y, B or LT |
+| Map | M or Tab | Select / Back |
 | Pause | Esc or P | Start |
 | Restart from the beginning (wipes the save) | R | Back |
 | Fullscreen | F11 | |
@@ -70,6 +71,13 @@ The first open takes a few seconds while Godot imports the art.
   and a finish screen with your time.
 - **Living world:** plants sway in the wind and get pushed aside when you run
   through them or land near them. Dark foreground silhouettes frame the screen edges.
+- **Whooshes:** dashing, bashing, double-jumping, gliding low and hard landings push a wave
+  of air that flings nearby plants and vines aside, and brushed plants release glowing spores.
+- **Swinging vines** with glowing tips hang under ledges and platforms. They're simulated
+  as ropes, so they swing when you run, dash or glide through them. Leaves drift down through the air.
+- **Map** (M / Tab / Select): areas reveal as you explore them (saved with your game).
+  It shows terrain, checkpoints, unclaimed shrines, doors, orbs you've spotted but not
+  collected, the goal, and you. Jump or Dash zooms in, and move pans.
 - Wall-slide sparks, footstep dust, and gamepad rumble on impacts.
 
 ## Tuning the feel

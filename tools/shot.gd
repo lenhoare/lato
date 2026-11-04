@@ -22,7 +22,9 @@ func _ready() -> void:
 			Game.abilities[k] = true
 	if args.has("no"):
 		Game.abilities[args.no] = false
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	main = load("res://scenes/main.tscn").instantiate()
+	main.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(main)
 
 func _physics_process(_d: float) -> void:
@@ -131,3 +133,28 @@ func _script_fgdebug(f: int, p: Player) -> void:
 		for s in fg.get_children():
 			if abs(s.position.x - c.x) < 900:
 				print(s.position, " scale ", s.scale, " vis ", s.visible, " tex ", s.texture.get_size(), " z ", fg.z_index)
+
+func _press(action: String) -> void:
+	var e := InputEventAction.new()
+	e.action = action
+	e.pressed = true
+	Input.parse_input_event(e)
+	var r := InputEventAction.new()
+	r.action = action
+	r.pressed = false
+	Input.parse_input_event(r)
+
+# visit a few places, then open the map (and zoom)
+func _script_map(f: int, p: Player) -> void:
+	var stops := [Vector2(400, 2560), Vector2(1600, 2560), Vector2(2600, 2400), Vector2(2900, 1536), Vector2(4200, 1536), Vector2(5400, 1536), Vector2(6000, 900), Vector2(6600, 1536), Vector2(7300, 1536)]
+	var i := f / 12
+	if f % 12 == 1 and i < stops.size():
+		p.global_position = stops[i]
+		p.reset_physics_interpolation()
+	if f == 130: _press("map")
+	if f == 170: _press("dash")
+
+func _script_whoosh(f: int, p: Player) -> void:
+	if f == 10: Input.action_press("move_right")
+	if f == 40: Input.action_press("dash")
+	if f == 42: Input.action_release("dash")

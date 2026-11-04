@@ -44,6 +44,8 @@ const Plants := preload("res://scripts/plants.gd")
 const Foreground := preload("res://scripts/foreground.gd")
 const PauseMenu := preload("res://scripts/pause_menu.gd")
 const Title := preload("res://scripts/title.gd")
+const MapScreen := preload("res://scripts/map_screen.gd")
+const Vine := preload("res://scripts/vine.gd")
 
 const SHRINES := {"1": "double_jump", "2": "dash", "3": "bash", "4": "glide"}
 
@@ -56,10 +58,12 @@ var tileset: TileSet
 var tile_sources := {}  # tile number -> source id
 var world: Node2D
 var player: Player
+var _secret_cells := {}  # Vector2i -> secret id
 
 
 func _ready() -> void:
 	_load_level()
+	Game.init_map(Vector2i(width, height))
 	_build_environment()
 	world = Node2D.new()
 	world.name = "World"
@@ -68,9 +72,13 @@ func _ready() -> void:
 	_build_terrain()
 	_build_objects()
 	_build_decorations()
+	_build_vines()
 	_spawn_player_and_camera()
 	add_child(Hud.new())
 	add_child(PauseMenu.new())
+	var map := MapScreen.new()
+	map.level = self
+	add_child(map)
 	add_child(Title.new())
 
 
@@ -213,7 +221,10 @@ func _build_terrain() -> void:
 			cover.set_cell(p, tile_sources[_ground_tile(p.x, p.y, true)], Vector2i.ZERO)
 			rects.append(Rect2(Vector2(p) * TILE, Vector2(TILE, TILE)))
 		var area := SecretArea.new()
-		area.set_meta("id", "secret_%d_%d" % [group[0].x, group[0].y])
+		var secret_id := "secret_%d_%d" % [group[0].x, group[0].y]
+		area.set_meta("id", secret_id)
+		for p in group:
+			_secret_cells[p] = secret_id
 		area.cover = cover
 		area.rects = rects
 		world.add_child(area)
@@ -254,6 +265,15 @@ func _hidden_item(p: Vector2i) -> bool:
 	return n >= 3
 
 
+func secret_at(p: Vector2i) -> String:
+	return _secret_cells.get(p, "")
+
+
+func _marker(node: Node, kind: String) -> void:
+	node.add_to_group("map_marker")
+	node.set_meta("map_kind", kind)
+
+
 func _bounds(group: Array) -> Rect2i:
 	var r := Rect2i(group[0], Vector2i.ONE)
 	for p in group:
@@ -284,6 +304,7 @@ func _build_objects() -> void:
 						pk.set_meta("id", id)
 						pk.kind = "orb" if c == "o" else "key"
 						pk.position = center
+						_marker(pk, pk.kind)
 						world.add_child(pk)
 				"L":
 					var l := Lantern.new()
@@ -296,17 +317,20 @@ func _build_objects() -> void:
 				"C":
 					var cp := Checkpoint.new()
 					cp.position = top_left
+					_marker(cp, "checkpoint")
 					world.add_child(cp)
 				"1", "2", "3", "4":
 					var sh := Shrine.new()
 					sh.ability = SHRINES[c]
 					sh.position = top_left
+					_marker(sh, "shrine")
 					world.add_child(sh)
 				"S":
 					sign_cells.append(Vector2i(x, y))
 				"G":
 					var g := Goal.new()
 					g.position = top_left
+					_marker(g, "goal")
 					world.add_child(g)
 				"^":
 					var run := 1
@@ -338,6 +362,7 @@ func _build_objects() -> void:
 		door.set_meta("id", door_id)
 		door.height = r.size.y
 		door.position = Vector2(r.position * TILE)
+		_marker(door, "door")
 		world.add_child(door)
 
 	for group in _groups("B"):
@@ -398,6 +423,28 @@ func _build_decorations() -> void:
 			deco.add_plant(tex, base, rng.randf() < 0.5)
 
 
+func _build_vines() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 23
+	var last := Vector2i(-10, -10)
+	for y in range(1, height - 1):
+		for x in width:
+			var c := cell(x, y)
+			var under_ground := c == "#" and cell(x, y - 1) == "#"
+			if not (under_ground or c == "=") or cell(x, y + 1) != " ":
+				continue
+			if y == last.y and x - last.x < 2:
+				continue
+			if rng.randf() > (0.45 if under_ground else 0.3):
+				continue
+			last = Vector2i(x, y)
+			var v := Vine.new()
+			v.segments = rng.randi_range(4, 9)
+			v.segment_length = rng.randf_range(16.0, 22.0)
+			v.position = Vector2(x * TILE + rng.randf_range(10, TILE - 10), (y + 1) * TILE - (14 if c == "=" else 2))
+			world.add_child(v)
+
+
 # ---------------------------------------------------------------------------
 # Player, camera, lighting
 # ---------------------------------------------------------------------------
@@ -450,6 +497,34 @@ func _spawn_player_and_camera() -> void:
 	motes.color = Color(0.8, 1.2, 1.6, 0.6)
 	motes.z_index = 25
 	cam.add_child(motes)
+
+	# leaves drifting down through the air
+	var leaves := CPUParticles2D.new()
+	leaves.texture = FX.leaf_texture()
+	leaves.amount = 26
+	leaves.lifetime = 9.0
+	leaves.preprocess = 9.0
+	leaves.local_coords = false
+	leaves.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	leaves.emission_rect_extents = Vector2(1200, 40)
+	leaves.position = Vector2(200, -520)
+	leaves.direction = Vector2(-0.4, 1)
+	leaves.spread = 25.0
+	leaves.gravity = Vector2(-10, 18)
+	leaves.initial_velocity_min = 30.0
+	leaves.initial_velocity_max = 70.0
+	leaves.angle_min = 0.0
+	leaves.angle_max = 360.0
+	leaves.angular_velocity_min = -120.0
+	leaves.angular_velocity_max = 120.0
+	leaves.orbit_velocity_min = 0.0
+	leaves.scale_amount_min = 0.5
+	leaves.scale_amount_max = 1.0
+	leaves.color = Color(0.45, 0.85, 0.65, 0.85)
+	leaves.hue_variation_min = -0.08
+	leaves.hue_variation_max = 0.08
+	leaves.z_index = 24
+	cam.add_child(leaves)
 
 
 func _build_environment() -> void:
