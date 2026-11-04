@@ -1,0 +1,55 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
+radius = 14.0
+height = 42.0
+
+[sub_resource type="Curve" id="Curve_fade"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
+floor_constant_speed = true
+floor_snap_length = 10.0
+script = ExtResource("1_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -21)
+shape = SubResource("CapsuleShape2D_body")
+
+[node name="Trail" type="CPUParticles2D" parent="."]
+position = Vector2(0, -21)
+z_index = -1
+emitting = false
+amount = 60
+lifetime = 0.6
+local_coords = false
+emission_shape = 1
+emission_sphere_radius = 10.0
+direction = Vector2(0, -1)
+spread = 180.0
+gravity = Vector2(0, -20)
+initial_velocity_min = 5.0
+initial_velocity_max = 30.0
+scale_amount_min = 0.6
+scale_amount_max = 1.4
+scale_amount_curve = SubResource("Curve_fade")
+color = Color(0.55, 0.85, 1.6, 0.8)
+
+[node name="Visual" type="Node2D" parent="."]
+z_index = 10
+
+[node name="Pivot" type="Node2D" parent="Visual"]
+position = Vector2(0, -21)
+
+[node name="Glow" type="Sprite2D" parent="Visual/Pivot"]
+modulate = Color(0.55, 0.85, 1.6, 0.35)
+z_index = -1
+scale = Vector2(1.3, 1.3)
+
+[node name="Sprite" type="Sprite2D" parent="Visual/Pivot"]
+centered = false
