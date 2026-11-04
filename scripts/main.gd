@@ -13,6 +13,7 @@ extends Node2D
 ##   3  bash shrine                 4  glide shrine
 ##   s  secret: looks solid but you can walk through it
 ##   W  updraft (rising wind)       G  goal
+##   ~  water (swim!)
 
 @export_file("*.txt") var level_path := "res://levels/level1.txt"
 @export_enum("Green", "Blue", "Brown", "Yellow") var tile_color := "Green"
@@ -46,6 +47,7 @@ const PauseMenu := preload("res://scripts/pause_menu.gd")
 const Title := preload("res://scripts/title.gd")
 const MapScreen := preload("res://scripts/map_screen.gd")
 const Vine := preload("res://scripts/vine.gd")
+const Water := preload("res://scripts/water.gd")
 
 const SHRINES := {"1": "double_jump", "2": "dash", "3": "bash", "4": "glide"}
 
@@ -59,10 +61,13 @@ var tile_sources := {}  # tile number -> source id
 var world: Node2D
 var player: Player
 var _secret_cells := {}  # Vector2i -> secret id
+var water := {}  # Vector2i -> true
 
 
 func _ready() -> void:
 	_load_level()
+	_find_water()
+	Game.level = self
 	Game.init_map(Vector2i(width, height))
 	_build_environment()
 	world = Node2D.new()
@@ -70,6 +75,7 @@ func _ready() -> void:
 	add_child(world)
 	_build_tileset()
 	_build_terrain()
+	_build_water()
 	_build_objects()
 	_build_decorations()
 	_build_vines()
@@ -263,6 +269,54 @@ func _hidden_item(p: Vector2i) -> bool:
 		if cell(p.x + d.x, p.y + d.y) in ["s", "o", "k", "#"]:
 			n += 1
 	return n >= 3
+
+
+func _find_water() -> void:
+	for y in height:
+		for x in width:
+			if cell(x, y) == "~":
+				water[Vector2i(x, y)] = true
+	# items / enemies placed in water count as water too
+	for _pass in 2:
+		for y in height:
+			for x in width:
+				var p := Vector2i(x, y)
+				if water.has(p) or not cell(x, y) in ["o", "k", "E", "L"]:
+					continue
+				var n := 0
+				for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+					if water.has(p + d):
+						n += 1
+				if n >= 2:
+					water[p] = true
+
+
+func is_water_at(pos: Vector2) -> bool:
+	return water.has(Vector2i(floori(pos.x / TILE), floori(pos.y / TILE)))
+
+
+func _build_water() -> void:
+	var seen := {}
+	for start in water.keys():
+		if seen.has(start):
+			continue
+		var group: Array[Vector2i] = []
+		var stack: Array[Vector2i] = [start]
+		seen[start] = true
+		while not stack.is_empty():
+			var p: Vector2i = stack.pop_back()
+			group.append(p)
+			for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+				var q: Vector2i = p + d
+				if water.has(q) and not seen.has(q):
+					seen[q] = true
+					stack.append(q)
+		var w := Water.new()
+		w.cells = group
+		for p in group:
+			if not water.has(p + Vector2i.UP):
+				w.surface[p] = true
+		world.add_child(w)
 
 
 func secret_at(p: Vector2i) -> String:

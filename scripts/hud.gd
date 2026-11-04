@@ -25,6 +25,14 @@ func _ready() -> void:
 	_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_flash)
 
+	var tint := ColorRect.new()
+	tint.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tint.color = Color(0.1, 0.35, 0.75, 0.0)
+	tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(tint)
+	Game.underwater_changed.connect(func(v: bool) -> void:
+		create_tween().tween_property(tint, "color:a", 0.22 if v else 0.0, 0.3))
+
 	# counters (top-left)
 	var top := VBoxContainer.new()
 	top.position = Vector2(28, 22)

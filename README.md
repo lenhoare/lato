@@ -57,6 +57,17 @@ The first open takes a few seconds while Godot imports the art.
 3. **Bash**: near a lantern or an enemy, hold Bash. Time slows down while you aim; release to launch. The object gets knocked the other way.
 4. **Glide**: press jump in mid-air and keep holding it. Rising winds (updrafts) lift you.
 
+## Swimming
+
+There's a hidden lake under the opening meadow: drop through the gap between the
+first two steps. Underwater you swim freely with the move keys or stick. You float
+gently upward, **Jump** kicks you forward in the direction you're holding, and Jump
+at the surface leaps out. Dash and Bash still work underwater. Diving in splashes,
+and while you're under the screen tints blue and the sound goes muffled.
+
+Add water anywhere with `~` in the level file. Orbs and enemies placed in water count as water too.
+Swim tuning is in the **Swim** group on the Player.
+
 ## Bells and whistles
 
 - **Sound:** every sound effect and the ambient music is generated in code at startup
@@ -110,7 +121,7 @@ D  locked door (2 tall)   B  breakable (dash) block  L  bash lantern
 E  floating enemy         C  checkpoint              S  sign
 1  double jump shrine     2  dash shrine             3  bash shrine
 4  glide shrine           s  secret (fake) wall      W  updraft
-G  goal
+G  goal                   ~  water
 ```
 
 Sign texts go after the `---` line, one per line, in left-to-right order of the

@@ -55,6 +55,15 @@ enum State { NORMAL, DASH, BASH_AIM, DEAD, FROZEN }
 @export var glide_speed := 460.0
 @export var updraft_speed := 560.0
 
+@export_group("Swim")
+@export var swim_speed := 300.0
+@export var swim_accel := 1500.0
+## Jump underwater kicks you forward in the direction you're holding.
+@export var swim_kick_speed := 620.0
+@export var swim_kick_cooldown := 0.35
+## Jump at the surface leaps out (fraction of a normal jump).
+@export var water_jump_mult := 0.95
+
 @export_group("Bash")
 @export var bash_radius := 210.0
 @export var bash_speed := 1200.0
@@ -99,6 +108,8 @@ var spin := 0.0
 var _last_step := -1
 var _spark_timer := 0.0
 var _whoosh_timer := 0.0
+var swimming := false
+var _swim_kick_timer := 0.0
 
 var frames := {}
 
@@ -136,7 +147,7 @@ func _recalc_jump() -> void:
 
 func _load_frames() -> void:
 	for n in ["stand", "walk1", "walk2", "walk3", "walk4", "walk5", "up1", "up2", "up3",
-			"fall", "roll", "duck", "hit", "switch1", "switch2", "dead"]:
+			"fall", "roll", "duck", "hit", "switch1", "switch2", "dead", "swim1", "swim2"]:
 		var path := "res://assets/PNG/Players/Player %s/player%s_%s.png" % [skin, skin, n]
 		frames[n] = load(path)
 
@@ -193,6 +204,16 @@ func _tick_timers(delta: float) -> void:
 
 
 func _process_normal(delta: float) -> void:
+	var center := global_position + Vector2(0, -BODY_HALF_HEIGHT)
+	var in_water := Game.is_water_at(center)
+	if in_water != swimming:
+		_water_transition(in_water)
+	swimming = in_water
+	Game.set_underwater(in_water and Game.is_water_at(center + Vector2(0, -26)))
+	if swimming:
+		_process_swim(delta)
+		return
+
 	var input_x := Input.get_axis("move_left", "move_right")
 	var jump_held := Input.is_action_pressed("jump")
 	var on_floor := is_on_floor()
@@ -281,6 +302,73 @@ func _process_normal(delta: float) -> void:
 		_start_dash(input_x)
 	elif Input.is_action_just_pressed("bash") and Game.has("bash"):
 		_try_bash()
+
+
+func _process_swim(delta: float) -> void:
+	var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var center := global_position + Vector2(0, -BODY_HALF_HEIGHT)
+	var at_surface := not Game.is_water_at(center + Vector2(0, -28))
+	air_jumps_left = 1
+	dash_available = true
+	glide_armed = false
+	gliding = false
+	wall_sliding = false
+	wall_dir = 0
+	_swim_kick_timer -= delta
+
+	var accel := swim_accel if input != Vector2.ZERO else swim_accel * 0.5
+	if velocity.length() > swim_speed * 1.05:
+		accel = 1100.0  # water drag after a kick or a dive
+	velocity = velocity.move_toward(input * swim_speed, accel * delta)
+	if input.y == 0.0 and not at_surface:
+		velocity.y = move_toward(velocity.y, -70.0, 380.0 * delta)  # gentle buoyancy
+	if at_surface and input.y <= 0.0 and velocity.y < 0.0:
+		velocity.y = move_toward(velocity.y, 0.0, 3200.0 * delta)  # float at the top
+	if input.x != 0.0:
+		facing = int(signf(input.x))
+
+	if jump_buffer_timer > 0.0:
+		if at_surface:
+			jump_buffer_timer = 0.0
+			velocity.y = jump_velocity * water_jump_mult
+			can_jump_cut = true
+			_squash(Vector2(0.72, 1.32))
+			Sfx.play("jump")
+		elif _swim_kick_timer <= 0.0:
+			jump_buffer_timer = 0.0
+			_swim_kick_timer = swim_kick_cooldown
+			var dir := input.normalized() if input != Vector2.ZERO else Vector2(facing, 0)
+			velocity = dir * swim_kick_speed
+			_squash(Vector2(0.8, 1.2))
+			Sfx.play("swim", 1.0, -3.0, 0.12)
+			FX.burst(get_parent(), center - dir * 20.0, Color(0.7, 0.95, 1.3, 0.7), 8, 120.0, 0.7, 0.6,
+					-dir, 40.0, -60.0)
+			Game.impulse(center, 120.0, 1.0)
+
+	if Input.is_action_just_pressed("dash") and Game.has("dash") and dash_cooldown_timer <= 0.0:
+		_start_dash(input.x)
+	elif Input.is_action_just_pressed("bash") and Game.has("bash"):
+		_try_bash()
+
+
+func _water_transition(entering: bool) -> void:
+	var speed := absf(velocity.y)
+	var surface_y := floorf((global_position.y - BODY_HALF_HEIGHT) / 64.0) * 64.0
+	if not entering:
+		surface_y += 64.0
+	var at := Vector2(global_position.x, surface_y)
+	if entering:
+		velocity *= 0.45
+		can_jump_cut = false
+		if speed > 150.0:
+			Sfx.play("splash", 1.0, linear_to_db(clampf(speed / 900.0, 0.3, 1.0)))
+			FX.burst(get_parent(), at, Color(0.75, 0.95, 1.4, 0.9), int(10 + speed / 60.0), 200.0 + speed * 0.3,
+					0.6, 0.9, Vector2.UP, 35.0, 900.0)
+			FX.ring(get_parent(), at, Color(0.7, 0.9, 1.4, 0.6), 50.0 + speed * 0.04, 0.35, 3.0)
+			Game.impulse(at, 160.0, 1.5)
+	elif speed > 150.0:
+		Sfx.play("splash", 1.3, -6.0)
+		FX.burst(get_parent(), at, Color(0.75, 0.95, 1.4, 0.8), 10, 220.0, 0.5, 0.8, Vector2.UP, 30.0, 900.0)
 
 
 func _after_move(was_on_floor: bool, pre_velocity: Vector2) -> void:
@@ -545,6 +633,8 @@ func respawn() -> void:
 	velocity = Vector2.ZERO
 	state = State.NORMAL
 	in_updraft = 0
+	swimming = false
+	Game.set_underwater(false)
 	air_jumps_left = 1
 	dash_available = true
 	visual.modulate.a = 1.0
@@ -610,6 +700,16 @@ func _process(delta: float) -> void:
 			trail.emitting = true
 			return
 
+	if swimming and state == State.NORMAL:
+		var sp := velocity.length()
+		anim_time += delta * (3.0 + sp / 60.0)
+		_set_frame("swim1" if int(anim_time) % 2 == 0 else "swim2")
+		if sp > 40.0:
+			target_rot = clampf(Vector2(absf(velocity.x), velocity.y).angle(), -1.3, 1.3) * facing
+		pivot.rotation = lerp_angle(pivot.rotation, target_rot, 1.0 - exp(-8.0 * delta))
+		trail.emitting = false
+		glow.modulate.a = lerpf(glow.modulate.a, 0.5, 1.0 - exp(-6.0 * delta))
+		return
 	if spin != 0.0:
 		var step := signf(spin) * minf(absf(spin), 22.0 * delta)
 		pivot.rotation += step

@@ -11,6 +11,7 @@ signal hide_hint
 signal camera_shake(strength: float, duration: float)
 signal screen_flash(color: Color, duration: float)
 signal saved
+signal underwater_changed(value: bool)
 ## Something pushed the air (dash, bash, landing...): plants and vines react.
 signal world_impulse(pos: Vector2, radius: float, strength: float)
 
@@ -40,6 +41,8 @@ var map_size := Vector2i.ZERO
 ## set by test tools to skip the title screen
 var skip_title := false
 var player: Node2D
+var level: Node  # main.gd, for tile queries such as is_water_at()
+var underwater := false
 
 var _slowmo_tween: Tween
 
@@ -51,6 +54,17 @@ func _ready() -> void:
 
 
 # --- Saving -------------------------------------------------------------------
+
+func set_underwater(value: bool) -> void:
+	if value == underwater:
+		return
+	underwater = value
+	underwater_changed.emit(value)
+
+
+func is_water_at(pos: Vector2) -> bool:
+	return is_instance_valid(level) and level.is_water_at(pos)
+
 
 func impulse(pos: Vector2, radius: float, strength: float) -> void:
 	world_impulse.emit(pos, radius, strength)

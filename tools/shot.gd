@@ -158,3 +158,17 @@ func _script_whoosh(f: int, p: Player) -> void:
 	if f == 10: Input.action_press("move_right")
 	if f == 40: Input.action_press("dash")
 	if f == 42: Input.action_release("dash")
+
+# drop into the lake, swim right, kick, then surface
+func _script_swim(f: int, p: Player) -> void:
+	if f == 60: Input.action_press("move_right")
+	if f == 100: Input.action_press("move_down")
+	if f == 130: _press("jump")
+	if f == 160: Input.action_release("move_down")
+	if f % 15 == 0: _log(p); print("   swim=", p.swimming, " under=", Game.underwater)
+
+func _script_surface(f: int, p: Player) -> void:
+	if f == 5: Input.action_press("move_up")
+	if f == 120: Input.action_press("jump")
+	if f == 121: Input.action_press("move_left")
+	if f % 15 == 0: _log(p); print("   swim=", p.swimming)

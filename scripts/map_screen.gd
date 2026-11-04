@@ -12,6 +12,7 @@ const C_SPIKE := Color(0.95, 0.35, 0.45)
 const C_WIND := Color(0.35, 0.55, 0.95, 0.9)
 const C_CRACK := Color(0.7, 0.5, 0.35)
 const C_DOOR := Color(0.4, 1.0, 0.75)
+const C_WATER := Color(0.2, 0.45, 0.85, 0.95)
 
 var level: Node  # main.gd (provides cell(), width, height, secret_at())
 var _open := false
@@ -203,6 +204,8 @@ func _cell_color(x: int, y: int) -> Color:
 			if not _solid_for_map(x + d.x, y + d.y) and level.cell(x + d.x, y + d.y) != "#":
 				return C_EDGE
 		return C_GROUND
+	if level.water.has(Vector2i(x, y)):
+		return C_WATER
 	match c:
 		"=":
 			return C_PLATFORM

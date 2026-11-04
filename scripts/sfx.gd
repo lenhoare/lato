@@ -98,6 +98,20 @@ func _setup_buses() -> void:
 		reverb.dry = 1.0
 		AudioServer.add_bus_effect(idx, reverb)
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Music"), -6.0)
+	# muffled sound underwater: a low-pass on both buses, toggled by Game.underwater
+	for bus_name in ["Music", "SFX"]:
+		var idx := AudioServer.get_bus_index(bus_name)
+		var lp := AudioEffectLowPassFilter.new()
+		lp.cutoff_hz = 700.0
+		AudioServer.add_bus_effect(idx, lp)
+		AudioServer.set_bus_effect_enabled(idx, AudioServer.get_bus_effect_count(idx) - 1, false)
+	Game.underwater_changed.connect(_on_underwater)
+
+
+func _on_underwater(value: bool) -> void:
+	for bus_name in ["Music", "SFX"]:
+		var idx := AudioServer.get_bus_index(bus_name)
+		AudioServer.set_bus_effect_enabled(idx, AudioServer.get_bus_effect_count(idx) - 1, value)
 
 
 # ---------------------------------------------------------------------------
@@ -217,6 +231,10 @@ func _build_sounds() -> void:
 	sounds["goal"] = sounds["shrine"]
 	sounds["locked"] = _mix(_tone(0.12, 200, 180, 0.002, 2.0, [1.0, 0.5], 0.3, "tri"),
 			_tone(0.12, 160, 150, 0.002, 2.0, [1.0, 0.5], 0.3, "tri"), 0.13)
+	sounds["splash"] = _mix(_noise(0.55, 0.5, 0.03, 0.003, 1.8, 0.75),
+			_tone(0.18, 500, 180, 0.002, 2.0, [1.0], 0.12))
+	sounds["swim"] = _mix(_noise(0.3, 0.06, 0.02, 0.03, 1.5, 0.6),
+			_tone(0.2, 380, 620, 0.01, 2.0, [1.0], 0.1))
 	sounds["glide"] = _make_wind()
 	sounds["wall"] = _make_scrape()
 	for k in sounds.keys():
